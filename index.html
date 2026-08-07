@@ -379,11 +379,11 @@
                 <div class="my-calendars">Mis calendarios</div>
                 <div class="cal-checkbox">
                     <input type="checkbox" checked disabled style="accent-color: #1a73e8;">
-                    <span>Prácticas Presenciales (Julio)</span>
+                    <span>Prácticas Presenciales</span>
                 </div>
                 <div class="cal-checkbox">
                     <input type="checkbox" checked disabled style="accent-color: #0f9d58;">
-                    <span>Prácticas Teletrabajo (Agosto)</span>
+                    <span>Prácticas Teletrabajo</span>
                 </div>
                 <div class="cal-checkbox">
                     <input type="checkbox" checked disabled style="accent-color: #5f6368;">
@@ -418,14 +418,18 @@
         }
 
         const configMeses = [
-            { idx: 6, nombre: "julio de 2026", dias: 31, anio: 2026 },
-            { idx: 7, nombre: "agosto de 2026", dias: 31, anio: 2026 }
+            { idx: 7, nombre: "agosto de 2026", dias: 31, anio: 2026 },
+            { idx: 8, nombre: "septiembre de 2026", dias: 30, anio: 2026 },
+            { idx: 9, nombre: "octubre de 2026", dias: 31, anio: 2026 },
+            { idx: 10, nombre: "noviembre de 2026", dias: 30, anio: 2026 },
+            { idx: 11, nombre: "diciembre de 2026", dias: 31, anio: 2026 }
         ];
 
         const feed = document.getElementById('pdf-content');
         
         const hoy = new Date();
         const hoySoloFecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        const fechaFinPracticas = new Date(2026, 11, 18); // 18 de diciembre de 2026
 
         configMeses.forEach(mes => {
             const section = document.createElement('div');
@@ -478,26 +482,35 @@
 
                 const esFinDeSemana = (currentTargetDate.getDay() === 0 || currentTargetDate.getDay() === 6);
 
-                if (mes.idx === 6) {
-                    // Julio
-                    if (!esFinDeSemana) {
-                        const evP = document.createElement('div');
-                        evP.className = 'g-event ev-presencial';
-                        evP.innerText = '🏢 08:30-14:30 Presencial';
-                        cell.appendChild(evP);
-                    }
-                } else if (mes.idx === 7) {
-                    // Agosto
-                    if (dia >= 10 && dia <= 16) {
-                        // Rango de Vacaciones obligadas (del 10 al 16 de agosto)
-                        if (!esFinDeSemana) {
-                            const evV = document.createElement('div');
-                            evV.className = 'g-event ev-vacaciones';
-                            evV.innerText = '🌴 Vacaciones';
-                            cell.appendChild(evV);
+                // Asignación de eventos según mes y rango hasta el 18 de diciembre de 2026
+                if (currentTargetDate >= hoySoloFecha && currentTargetDate <= fechaFinPracticas) {
+                    if (mes.idx === 7) {
+                        // Agosto
+                        if (dia >= 10 && dia <= 16) {
+                            if (!esFinDeSemana) {
+                                const evV = document.createElement('div');
+                                evV.className = 'g-event ev-vacaciones';
+                                evV.innerText = '🌴 Vacaciones';
+                                cell.appendChild(evV);
+                            }
+                        } else if (!esFinDeSemana) {
+                            const evT = document.createElement('div');
+                            evT.className = 'g-event ev-teletrabajo';
+                            evT.innerText = '💻 08:30-14:30 Teletrabajo';
+                            cell.appendChild(evT);
                         }
-                    } else if (!esFinDeSemana) {
-                        // Días laborables normales de agosto (Teletrabajo)
+                    } else {
+                        // Septiembre, Octubre, Noviembre y Diciembre (hasta el 18)
+                        if (!esFinDeSemana) {
+                            const evP = document.createElement('div');
+                            evP.className = 'g-event ev-presencial';
+                            evP.innerText = '🏢 08:30-14:30 Presencial';
+                            cell.appendChild(evP);
+                        }
+                    }
+                } else if (currentTargetDate < hoySoloFecha) {
+                    // Días pasados de agosto antes de hoy
+                    if (mes.idx === 7 && !esFinDeSemana) {
                         const evT = document.createElement('div');
                         evT.className = 'g-event ev-teletrabajo';
                         evT.innerText = '💻 08:30-14:30 Teletrabajo';
@@ -522,7 +535,7 @@
             btn.innerText = isExpanded ? "Reducir Vista" : "Ampliar Vista";
         }
 
-        // Generación del PDF con formato de reporte mejorado y filtro desde el 8 de Julio
+        // Generación del PDF con formato de reporte mejorado desde la fecha actual hasta el 18 de Diciembre de 2026
         function exportToPDF() {
             const pdfContainer = document.getElementById('pdf-text-template');
             pdfContainer.innerHTML = ''; 
@@ -555,15 +568,14 @@
             const diasTexto = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
             const mesesTexto = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-            // Fecha límite estricta: 8 de Julio de 2026
-            const fechaLimiteFiltro = new Date(2026, 6, 8); 
+            const fechaLimiteFiltro = hoySoloFecha; 
 
             configMeses.forEach(mes => {
                 for (let dia = 1; dia <= mes.dias; dia++) {
                     const fechaActual = new Date(mes.anio, mes.idx, dia);
                     
-                    // FILTRO: Si la fecha evaluada es anterior al 8 de Julio, se salta y no se añade al PDF
-                    if (fechaActual < fechaLimiteFiltro) {
+                    // FILTRO: Desde hoy hasta el 18 de diciembre de 2026
+                    if (fechaActual < fechaLimiteFiltro || fechaActual > fechaFinPracticas) {
                         continue;
                     }
 
@@ -572,10 +584,7 @@
                     let detalleActividad = "";
 
                     if (!esFinDeSemana) {
-                        if (mes.idx === 6) {
-                            modalidadBadge = `<span class="pdf-badge bg-p">Presencial</span>`;
-                            detalleActividad = "Horario 08:30 a 14:30 - Actividad presencial en campus";
-                        } else if (mes.idx === 7) {
+                        if (mes.idx === 7) {
                             if (dia >= 10 && dia <= 16) {
                                 modalidadBadge = `<span class="pdf-badge bg-v">Vacaciones</span>`;
                                 detalleActividad = "Período vacacional autorizado";
@@ -583,10 +592,12 @@
                                 modalidadBadge = `<span class="pdf-badge bg-t">Teletrabajo</span>`;
                                 detalleActividad = "Horario 08:30 a 14:30 - Actividad remota conectada";
                             }
+                        } else {
+                            modalidadBadge = `<span class="pdf-badge bg-p">Presencial</span>`;
+                            detalleActividad = "Horario 08:30 a 14:30 - Actividad presencial en empresa/centro";
                         }
                     }
 
-                    // Solo añadimos filas de los días que tengan actividad registrada (saltando fines de semana)
                     if (detalleActividad !== "") {
                         const tr = document.createElement('tr');
                         const nameDiaSemana = diasTexto[fechaActual.getDay()];
